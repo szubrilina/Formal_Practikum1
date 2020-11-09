@@ -269,16 +269,15 @@ private:
 	}
 };
 
-int main() {
-
-	std::string input_line;
-	getline(cin, input_line);
-	
+int getAnswer(const std::string &input_line) {
+ 
 	MyProblemSolver solver(input_line);
 
-	std::cout << solver.ans << "\n";
-
-	return 0;
+	if (solver.ans == "YES")
+           return  1;
+        if (solver.ans == "NO")
+           return 0;
+        return -1;
 }
 
 /*
