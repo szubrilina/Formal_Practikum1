@@ -1,4 +1,0 @@
-/home/sofia/formal_project/Formal_Practikum1/built/CMakeFiles/rebuild_cache.dir
-/home/sofia/formal_project/Formal_Practikum1/built/CMakeFiles/edit_cache.dir
-/home/sofia/formal_project/Formal_Practikum1/built/CMakeFiles/runTests.dir
-/home/sofia/formal_project/Formal_Practikum1/built/CMakeFiles/SourceTesting_coverage.dir
