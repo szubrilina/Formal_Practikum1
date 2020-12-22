@@ -2,7 +2,7 @@
 // Created by sofia on 22.12.2020.
 //
 
-#include "main.cpp"
+#include "Source.cpp"
 #include <string>
 #include <gtest/gtest.h>
 
