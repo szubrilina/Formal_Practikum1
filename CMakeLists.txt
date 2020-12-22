@@ -9,6 +9,7 @@ append_coverage_compiler_flags()
 
 # Locate GTest
 find_package(GTest REQUIRED)
+find_package(Threads REQUIRED) 
 include_directories(${GTEST_INCLUDE_DIRS})
 
 include_directories(3rdparty)
@@ -28,7 +29,11 @@ EXECUTABLE runTests BASE_DIRECTORY "${PROJECT_SOURCE_DIR}")
 
 # Link runTests with what we want to test and the GTest and pthread library
 add_executable(runTests tests.cpp)
-target_link_libraries(runTests ${GTEST_LIBRARIES} pthread)
+
+#target_link_libraries(runTests ${GTEST_LIBRARIES} pthread)
+
+
+target_link_libraries(runTests Threads::Threads ${GTEST_LIBRARIES} pthread)
 
 
 
