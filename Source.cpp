@@ -1,5 +1,4 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
-
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
 #include <vector>
@@ -7,290 +6,263 @@
 #include <stack>
 #include <algorithm>
 #include <unordered_set>
+#include <exception>
+#include <stack>
+#include <set>
+#include <exception>
+#include "MyRegexp.h"
 
-using std::cin;
-using std::vector;
-using std::stack;
-using std::pair;
-
-class MyProblemSolver {
-
-public:
-	std::string ans;
-	MyProblemSolver(const std::string& reg_expr) {
-		if (!_parse_input(reg_expr, _reg_expression, _target_c, _n)) {
-			ans = "ERROR";
-		}
-		_solve();
-	}
-
-private:
-	
-	struct _vertex {
-		bool can_skip = 0;
-		int index;
-
-		vector<int> remainders;
-
-		_vertex(int _index, std::vector<int> _rem) : index(_index) {
-			for (int val : _rem) {
-				remainders.push_back(val);
-			}
-		}
-	};
-
-	void _delete_duplicates(int ind) {
-		//_all_vetrices[ind].remainders.resize(std::unique(_all_vetrices[ind].remainders.begin(), _all_vetrices[ind].remainders.end()) - _all_vetrices[ind].remainders.begin());
-
-		std::unordered_set<int> sett;
-		for (int elem : _all_vetrices[ind].remainders)
-			sett.insert(elem);
-
-		_all_vetrices[ind].remainders.clear();
-		for (int elem : sett) {
-			_all_vetrices[ind].remainders.push_back(elem);
-		}
-	}
-
-	bool _parse_input(std::string str, std::string& automat, char& c, int& n) {
-
-		while (str.size() > 0 && str.back() == ' ') {
-			str.pop_back();
-		}
-
-		std::string number;
-
-		int index = (int)str.size() - 1;
-		for (; index >= 0; --index) {
-			if (str[index] >= '0' && str[index] <= '9') {
-				number += str[index];
-			}
-			else {
-				break;
-			}
-		}
-
-		if (number.size() == 0) {
-			return 0;
-		}
-
-		reverse(number.begin(), number.end());
-
-		n = 0;
-		for (int i = 0; i < number.size(); ++i) {
-			n *= 10;
-			n += (number[i] - '0');
-		}
-
-		if (index - 1 < 0)
-			return 0;
-
-		c = str[index - 1];
-		if (!(c >= 'a' && c <= 'z')) {
-			return 0;
-		}
-
-		for (int i = 0; i < index - 1; ++i) {
-			automat += str[i];
-		}
-
-		return 1;
-	}
-
-
-	vector<_vertex> _all_vetrices;
-	std::string _reg_expression;
-	char _target_c;
-	int _n;
-	int _cnt_vert = 0;
-	stack<pair<int, int>> _st;
-
-	void _multiply() {
-		
-		if (_st.size() < 2) {
-			ans = "ERROR";
-			return;
-		}
-		pair<int, int> high = _st.top();
-		_st.pop();
-		pair<int, int> low = _st.top();
-		_st.pop();
-
-		// ind1 -> low.first -> ... -> low.second ------> high.first -> .... -> high.second -> ind2
-
-		int ind1 = _cnt_vert++;
-		int ind2 = _cnt_vert++;
-
-		_all_vetrices.push_back({ ind1, {} });
-		_all_vetrices.push_back({ ind2, {} });
-
-		if (_all_vetrices[high.second].can_skip && _all_vetrices[low.second].can_skip) {
-			_all_vetrices[ind2].can_skip = 1;
-		}
-
-		for (int s1 : _all_vetrices[low.second].remainders) {
-			for (int s2 : _all_vetrices[high.second].remainders) {
-				_all_vetrices[ind2].remainders.push_back((s1 + s2) % _n);
-			}
-		}
-		if (_all_vetrices[high.second].remainders.empty() || _all_vetrices[high.second].can_skip) {
-			for (int s1 : _all_vetrices[low.second].remainders)
-				_all_vetrices[ind2].remainders.push_back(s1);
-		}
-		if (_all_vetrices[low.second].remainders.empty() || _all_vetrices[low.second].can_skip) {
-			for (int s2 : _all_vetrices[high.second].remainders)
-				_all_vetrices[ind2].remainders.push_back(s2);
-		}
-
-		_delete_duplicates(ind2);
-
-		_st.push({ ind1, ind2 });
-	}
-
-	void _addition() {  // yes
-		if (_st.size() < 2) {
-			ans = "ERROR";
-			return;
-		}
-		pair<int, int> high = _st.top();
-		_st.pop();
-		pair<int, int> low = _st.top();
-		_st.pop();
-
-		int new_first_node = _cnt_vert++;
-		_all_vetrices.push_back({ new_first_node, {0} });
-
-
-		//                     low.first -> ... -> low.second 
-		// new_first_node ->                                    -> new_second_node
-		//                     high.first -> .. -> high.second
-
-		int new_second_node = _cnt_vert++;
-		_all_vetrices.push_back({ new_second_node, {} });
-
-		for (int elem : _all_vetrices[low.second].remainders)
-			_all_vetrices[new_second_node].remainders.push_back(elem);
-
-		for (int elem : _all_vetrices[high.second].remainders)
-			_all_vetrices[new_second_node].remainders.push_back(elem);
-
-		_delete_duplicates(new_second_node);
-
-		if (_all_vetrices[low.second].can_skip && _all_vetrices[high.second].can_skip) {
-			_all_vetrices[new_second_node].can_skip = 1;
-		}
-
-		_st.push({ new_first_node, new_second_node });
-	}
-
-	void _klinis_star() {
-		if (_st.empty()) {
-			ans = "ERROR";
-			return;
-		}
-
-		int ind_lower = _st.top().first;
-		int ind_higher = _st.top().second;
-
-		int ind1 = _cnt_vert++;
-		int ind2 = _cnt_vert++;
-
-		// ind1 -> ind_lower ------> ind_higher -> ind2
-
-		_all_vetrices.push_back(_vertex(ind1, _all_vetrices[ind_lower].remainders));
-		_all_vetrices.push_back(_vertex(ind2, _all_vetrices[ind_higher].remainders));
-
-		pair<int, int> prev = { ind1, ind2 };
-		for (int iter = 0; iter < _n * _n; ++iter) { //_st.push({ ind1, ind2 });
-			_st.push(_st.top());
-			_st.push({ ind1, ind2 });
-			_multiply();
-			_addition();
-		}
-
-		_all_vetrices[_st.top().second].can_skip = 1;
-	}
-
-	void _solve() {
-		for (char c : _reg_expression) {
-			if (c == '1') {
-				int ind1 = _cnt_vert++;
-				int ind2 = _cnt_vert++;
-
-				_all_vetrices.push_back(_vertex(ind1, {}));
-				_all_vetrices.push_back(_vertex(ind2, {}));
-				_all_vetrices[ind2].can_skip = 1;
-
-				_st.push({ ind1, ind2 });
-			}
-			else if (c == 'a' || c == 'b' || c == 'c') { // yes
-				int ind1 = _cnt_vert++;
-				int ind2 = _cnt_vert++;
-
-				_all_vetrices.push_back(_vertex(ind1, {}));
-				if (c == _target_c) {
-					_all_vetrices.push_back(_vertex(ind2, { 1 }));
-				}
-				else {
-					_all_vetrices.push_back(_vertex(ind2, {}));
-				}
-
-				_st.push({ ind1, ind2 });
-			}
-			else if (c == '*') {  // no
-				_klinis_star();
-			}
-			else if (c == '.') {
-				_multiply();
-			}
-			else if (c == '+') {
-				_addition();
-			}
-			else if (c == ' ') {
-				continue;
-			}
-			else {
-				ans = "ERROR";
-				return;
-			}
-		}
-		if (_st.size() > 1) {
-			ans = "ERROR";
-		}
-
-		if (ans != "ERROR") {
-			ans = "NO";
-			for (int elem : _all_vetrices[_st.top().second].remainders) {
-				if (elem % _n == 0) {
-					ans = "YES";
-				}
-			}
-		}
-	}
-};
-
-int getAnswer(const std::string &input_line) {
- 
-	MyProblemSolver solver(input_line);
-
-	if (solver.ans == "YES")
-           return  1;
-        if (solver.ans == "NO")
-           return 0;
-        return -1;
+State::State(const std::vector<int> rem, bool canSkip) : canSkip(canSkip) {
+    remainders = rem;
 }
 
+MyParser::MyParser() = default;
+
+
+void MyParser::tryToSkip_(const State& one, const State& other, std::vector<int>& ans) {
+    if (one.remainders.empty() || one.canSkip) {
+        for (int a : other.remainders)
+            ans.push_back(a);
+    }
+}
+
+void MyParser::deleteDuplicates_(State& state) {
+
+    std::set<int> uniqueIntegers;
+    for (int element : state.remainders) {
+        uniqueIntegers.insert(element);
+    }
+
+    state.remainders.clear();
+    for (int element : uniqueIntegers) {
+        state.remainders.push_back(element);
+    }
+}
+
+
+
+State MyParser::concatination(const State& one, const State& other, int mod) {
+    std::vector<int> newRemainders;
+
+    for (int a : one.remainders) {
+        for (int b : other.remainders) {
+            newRemainders.push_back((a + b) % mod);
+        }
+    }
+    tryToSkip_(one, other, newRemainders);
+    tryToSkip_(other, one, newRemainders);
+
+    State newState(newRemainders, 0);
+
+    deleteDuplicates_(newState);
+    return newState;
+}
+
+void MyParser::tryMakeConcatination(std::stack<State>& stateStack, int mod) {
+    if (stateStack.size() < 2) {
+        throw(std::logic_error(std::string("Regular expression is not correct!")));
+    }
+    State other = stateStack.top();
+    stateStack.pop();
+    State one = stateStack.top();
+    stateStack.pop();
+    stateStack.push(MyParser::concatination(one, other, mod));
+}
+
+
+
+
+State MyParser::addition(const State& one, const State& other, int mod) {
+
+    std::vector<int> newRemainders;
+
+    for (int elem : one.remainders)
+        newRemainders.push_back(elem);
+
+    for (int elem : other.remainders)
+        newRemainders.push_back(elem);
+
+    State newState = State(newRemainders, 0);
+
+    if (one.canSkip && other.canSkip) {
+        newState.canSkip = 1;
+    }
+
+    deleteDuplicates_(newState);
+
+    return newState;
+}
+
+void MyParser::tryMakeAddition(std::stack<State>& stateStack, int mod) {
+    if (stateStack.size() < 2) {
+        throw(std::logic_error(std::string("Regular expression is not correct!")));
+    }
+    State other = stateStack.top();
+    stateStack.pop();
+    State one = stateStack.top();
+    stateStack.pop();
+    State result = MyParser::addition(one, other, mod);
+    stateStack.push(result);
+}
+
+///home/sofia/CLionProjects/FormalProjectv2/main.cpp
+
+
+
+
+State MyParser::star(const State& one, int mod) { // Klini's star
+
+    std::vector<State> stateDegres;
+    stateDegres.push_back(one);
+
+    for (int i = 2; i < mod * mod; ++i) {
+        stateDegres.push_back(MyParser::concatination(stateDegres.back(), one, mod));
+    }
+
+    while (stateDegres.size() > 1) {
+        State one = stateDegres.back();
+        stateDegres.pop_back();
+
+        State other = stateDegres.back();
+        stateDegres.pop_back();
+
+        State res = MyParser::addition(one, other, mod);
+        stateDegres.push_back(res);
+    }
+
+    stateDegres.back().canSkip = 1;
+    return stateDegres.back();
+}
+
+void MyParser::tryMakeStar(std::stack<State>& stateStack, int mod) { // Klini's star
+
+    if (stateStack.empty()) {
+        throw(std::logic_error(std::string("Regular expression is not correct!")));
+    }
+    State newState = MyParser::star(stateStack.top(), mod);
+    stateStack.pop();
+    stateStack.push(newState);
+}
+
+State MyParser::parse(std::string alfa, char targetChar, int mod) {
+    std::stack<State>stateStack;
+
+    for (char c : alfa) {
+        if (c == '1') {
+            State newState;
+            newState.canSkip = 1;
+            stateStack.push(newState);
+
+        }
+        else if (c == 'a' || c == 'b' || c == 'c') { // yes
+            State newState;
+            if (c == targetChar) {
+                newState.remainders.push_back(1);
+            }
+            stateStack.push(newState);
+        }
+        else if (c == '*') {
+            tryMakeStar(stateStack, mod);
+        }
+        else if (c == '.') {
+            tryMakeConcatination(stateStack, mod);
+        }
+        else if (c == '+') {
+            tryMakeAddition(stateStack, mod);
+        }
+        else if (c == ' ') {
+        }
+        else {
+            throw(std::logic_error(std::string("Unknown symbols in regular expression!")));
+        }
+    }
+
+    if (stateStack.size() != 1) {
+        throw(std::logic_error(std::string("Regular expression is nor correct!")));
+    }
+
+    return stateStack.top();
+}
+
+
+bool MySolver::getAnswer(std::string alfa, char c, int k) {
+    State resultState = MyParser::parse(alfa, c, k);
+
+    for (int item : resultState.remainders) {
+        if (item % k == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void MySolver::tryParseNumber(std::string& input, int&n) {
+
+    std::string number;
+
+    while (input.size() > 0 && input.back() == ' ') {
+        input.pop_back();
+    }
+
+    while(input.size() > 0) {
+        if (input.back() >= '0' && input.back() <= '9') {
+            number += input.back();
+            input.pop_back();
+        }
+        else {
+            break;
+        }
+    }
+
+    reverse(number.begin(), number.end());
+
+    n = 0;
+    for (int i = 0; i < number.size(); ++i) {
+        n *= 10;
+        n += (number[i] - '0');
+    }
+
+    if (n == 0 || input.size() == 0) {
+        throw(std::logic_error(std::string("Input is incorrect!")));
+    }
+}
+
+
+void MySolver::tryParseChar(std::string& input, char& targetChar) {
+    while (input.size() > 0 && input.back() == ' ') {
+        input.pop_back();
+    }
+    if (input.size() == 0 || !(input.back() >= 'a' && input.back() <= 'z')) {
+        throw(std::logic_error(std::string("Input is incorrect!")));
+    }
+    targetChar = input.back();
+    input.pop_back();
+}
+
+
+void MySolver::inputParse(std::string input, std::string& alfa, char& targetChar, int& mod) {
+
+    MySolver::tryParseNumber(input, mod);
+
+    MySolver::tryParseChar(input, targetChar);
+
+    alfa = input;
+}
+
+
 /*
-aa+ b 1
+int main() {
 
-ab + * a 5
+    std::string input;
+    std::string alfa;
+    char c;
+    int k;
 
-ab + c.aba. * .bac. + . 2
+    getline(std::cin, input);
 
-aba.+ b 1
+    MySolver::inputParse(input, alfa, c, k);
 
-
-
-ab + c.aba. * .bac. + . + * a 2
-aba. * .a. * ab1 + .. a 2
+    std::cout << MySolver::getAnswer(alfa, c, k);
+    return 0;
+}
 */
